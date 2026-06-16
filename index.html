@@ -1,0 +1,2558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>RentasPro - Sistema de Gestión de Rentas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #f0f4f8; }
+        
+        /* Sidebar mejorado */
+        .sidebar {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(180deg, #1a2332 0%, #0f1729 100%);
+            color: #e2e8f0;
+        }
+        .sidebar-closed { transform: translateX(-100%); }
+        .sidebar .nav-item {
+            transition: all 0.2s;
+            border-radius: 10px;
+            margin: 2px 0;
+            padding: 10px 16px;
+            color: #94a3b8;
+        }
+        .sidebar .nav-item:hover {
+            background: rgba(255,255,255,0.08);
+            color: #f1f5f9;
+        }
+        .sidebar .nav-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border-right: 3px solid #3b82f6;
+        }
+        .sidebar .nav-item i { width: 24px; text-align: center; }
+        
+        /* Tarjetas mejoradas */
+        .card-dashboard {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: all 0.2s;
+            border: 1px solid #eef2f6;
+        }
+        .card-dashboard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+        .card-dashboard .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        
+        /* Badges de estado */
+        .badge-estado {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .badge-ocupado { background: #fee2e2; color: #dc2626; }
+        .badge-disponible { background: #dcfce7; color: #16a34a; }
+        .badge-mantenimiento { background: #fef3c7; color: #d97706; }
+        .badge-vigente { background: #dbeafe; color: #2563eb; }
+        .badge-vencido { background: #f1f5f9; color: #64748b; }
+        .badge-atrasado { background: #fee2e2; color: #dc2626; }
+        .badge-pagado { background: #dcfce7; color: #16a34a; }
+        
+        /* Modal mejorado */
+        .modal-overlay {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(6px);
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content::-webkit-scrollbar { width: 6px; }
+        .modal-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* Formularios */
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            background: #f8fafc;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            background: white;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 4px;
+        }
+        
+        /* Tablas responsivas */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
+            border: 1px solid #eef2f6;
+        }
+        .table-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .table-container th {
+            background: #f8fafc;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #eef2f6;
+            white-space: nowrap;
+        }
+        .table-container td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .table-container tr:hover { background: #fafbfc; }
+        
+        /* Notificaciones */
+        .notif-item {
+            padding: 12px 16px;
+            border-radius: 10px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+        }
+        .notif-item:hover { background: #f8fafc; }
+        .notif-item.unread { border-left-color: #3b82f6; background: #f0f7ff; }
+        .notif-item .notif-time { font-size: 0.7rem; color: #94a3b8; }
+        
+        /* Botones */
+        .btn-primary {
+            background: #1e293b;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background: #0f172a; }
+        .btn-blue {
+            background: #3b82f6;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-blue:hover { background: #2563eb; }
+        .btn-green {
+            background: #22c55e;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-green:hover { background: #16a34a; }
+        .btn-red {
+            background: #ef4444;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-red:hover { background: #dc2626; }
+        
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Login mejorado */
+        .login-bg {
+            background: linear-gradient(135deg, #0f1729 0%, #1e293b 100%);
+        }
+        .login-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        
+        /* Layout responsive */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 50; width: 280px; }
+            .main-content { padding: 12px; }
+            .card-dashboard { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center login-bg p-4">
+    <div class="login-card max-w-md w-full p-8">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-600/30">
+                <i class="fas fa-building text-white text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">Rentas<span class="text-blue-600">Pro</span></h1>
+            <p class="text-gray-500 text-sm mt-1">Sistema de Gestión de Rentas</p>
+            <span class="inline-block mt-2 bg-green-50 text-green-700 text-xs px-3 py-1 rounded-full border border-green-200">
+                <i class="fas fa-check-circle mr-1"></i> Modo Local
+            </span>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="form-label"><i class="fas fa-envelope mr-2 text-gray-400"></i>Correo Electrónico</label>
+                <input type="email" id="loginEmail" value="admin@rentas.com" class="form-input">
+            </div>
+            <div>
+                <label class="form-label"><i class="fas fa-lock mr-2 text-gray-400"></i>Contraseña</label>
+                <input type="password" id="loginPassword" value="123456" class="form-input">
+            </div>
+            <div>
+                <label class="form-label"><i class="fas fa-user-tag mr-2 text-gray-400"></i>Rol (simulación)</label>
+                <select id="roleSelector" class="form-input">
+                    <option value="admin">👑 Administrador</option>
+                    <option value="cobrador">💰 Cobrador</option>
+                    <option value="inquilino">🏠 Inquilino</option>
+                </select>
+            </div>
+            <button onclick="login()" class="w-full btn-blue py-3 text-base shadow-lg shadow-blue-600/30 hover:shadow-blue-600/20">
+                <i class="fas fa-sign-in-alt mr-2"></i> Ingresar
+            </button>
+        </div>
+        <p class="text-xs text-gray-400 text-center mt-6 border-t border-gray-100 pt-4">
+            <i class="fas fa-database mr-1"></i> Datos guardados en tu navegador
+        </p>
+    </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="appScreen" class="hidden min-h-screen flex flex-col">
+
+    <!-- HEADER -->
+    <header class="bg-white shadow-sm border-b border-gray-200 p-3 md:p-4 flex items-center justify-between sticky top-0 z-40">
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-800 text-xl focus:outline-none">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span class="font-bold text-lg md:hidden text-gray-800">RentasPro</span>
+        </div>
+        <div class="flex items-center space-x-3 md:space-x-4">
+            <span class="text-sm text-gray-500 hidden sm:inline" id="fechaActual"></span>
+            <span class="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium hidden sm:inline" id="userRoleBadge">Admin</span>
+            <div class="relative">
+                <button onclick="toggleNotifications()" class="relative text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span id="notifBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full min-w-[20px] h-5 flex items-center justify-center font-bold">0</span>
+                </button>
+                <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 max-h-96 overflow-y-auto">
+                    <div class="p-3 border-b border-gray-100 font-semibold text-gray-700 flex justify-between items-center">
+                        <span>Notificaciones</span>
+                        <button onclick="markAllRead()" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Marcar todas leídas</button>
+                    </div>
+                    <div id="notifList" class="divide-y divide-gray-50"></div>
+                </div>
+            </div>
+            <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition text-sm hidden sm:inline">
+                <i class="fas fa-sign-out-alt mr-1"></i> Salir
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 relative">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="sidebar fixed md:relative z-50 h-full w-64 md:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto shadow-2xl">
+            <div class="p-5 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-building text-white text-sm"></i>
+                    </div>
+                    <span class="font-bold text-lg text-white">Rentas<span class="text-blue-400">Pro</span></span>
+                </div>
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white text-lg">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="px-4 py-3 border-b border-white/10 flex items-center space-x-2">
+                <span class="text-xs bg-blue-600/30 text-blue-300 px-2 py-0.5 rounded-full font-medium" id="userRoleBadgeSide">Admin</span>
+                <span class="text-xs text-gray-400 truncate" id="userNameDisplay">admin@rentas.com</span>
+            </div>
+            <nav class="flex-1 p-3 space-y-0.5">
+                <a href="#" onclick="navigateTo('dashboard')" id="nav-dashboard" class="nav-item active flex items-center"><i class="fas fa-chart-pie"></i><span class="ml-3">Dashboard</span></a>
+                <a href="#" onclick="navigateTo('locales')" id="nav-locales" class="nav-item flex items-center"><i class="fas fa-store"></i><span class="ml-3">Locales</span></a>
+                <a href="#" onclick="navigateTo('inquilinos')" id="nav-inquilinos" class="nav-item flex items-center"><i class="fas fa-users"></i><span class="ml-3">Inquilinos</span></a>
+                <a href="#" onclick="navigateTo('contratos')" id="nav-contratos" class="nav-item flex items-center"><i class="fas fa-file-signature"></i><span class="ml-3">Contratos</span></a>
+                <a href="#" onclick="navigateTo('pagos')" id="nav-pagos" class="nav-item flex items-center"><i class="fas fa-hand-holding-usd"></i><span class="ml-3">Pagos</span></a>
+                <a href="#" onclick="navigateTo('morosidad')" id="nav-morosidad" class="nav-item flex items-center"><i class="fas fa-exclamation-triangle"></i><span class="ml-3">Morosidad</span></a>
+                <a href="#" onclick="navigateTo('reportes')" id="nav-reportes" class="nav-item flex items-center"><i class="fas fa-chart-bar"></i><span class="ml-3">Reportes</span></a>
+                <a href="#" onclick="navigateTo('documentos')" id="nav-documentos" class="nav-item flex items-center"><i class="fas fa-folder-open"></i><span class="ml-3">Documentos</span></a>
+                <a href="#" onclick="navigateTo('usuarios')" id="nav-usuarios" class="nav-item flex items-center"><i class="fas fa-user-cog"></i><span class="ml-3">Usuarios</span></a>
+                <hr class="my-3 border-white/10">
+                <a href="#" onclick="navigateTo('configuracion')" id="nav-configuracion" class="nav-item flex items-center"><i class="fas fa-cog"></i><span class="ml-3">Configuración</span></a>
+                <a href="#" onclick="logout()" class="nav-item flex items-center text-red-400 hover:text-red-300 hover:bg-red-500/10"><i class="fas fa-sign-out-alt"></i><span class="ml-3">Salir</span></a>
+            </nav>
+            <div class="p-4 border-t border-white/10 text-xs text-gray-500 flex justify-between">
+                <span><i class="fas fa-database mr-1"></i> Local</span>
+                <span id="notifBadgeSidebar" class="bg-red-500/20 text-red-400 rounded-full px-2 py-0.5 text-xs">0</span>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main id="mainContent" class="flex-1 p-4 md:p-8 bg-gray-50 min-h-screen">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="pageTitle" class="text-xl md:text-2xl font-bold text-gray-800">Panel de Control</h2>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-400 hidden sm:inline">Última actualización: hoy</span>
+                    <button onclick="refreshData()" class="text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="contentContainer" class="fade-in"></div>
+        </main>
+    </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div id="modalOverlay" class="hidden fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+    <div class="modal-content max-w-3xl w-full p-6 relative animate-[fadeIn_0.2s_ease]">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+            <i class="fas fa-times text-xl"></i>
+        </button>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<script>
+// =====================================================================
+// 1. DATOS Y PERSISTENCIA
+// =====================================================================
+const STORAGE_KEY = 'rentasProData_v2';
+
+const DEFAULT_DATA = {
+    locales: [
+        { id: 1, nombre: "Local Centro #1", direccion: "Calle 5 de Mayo #12, Centro", tipo: "Comercial", metros: 45, estado: "ocupado", descripcion: "Esquina con excelente visibilidad", documentos: [] },
+        { id: 2, nombre: "Plaza Norte", direccion: "Av. Insurgentes #300, Col. Norte", tipo: "Oficina", metros: 80, estado: "ocupado", descripcion: "Planta baja con estacionamiento", documentos: [] },
+        { id: 3, nombre: "Bodega Sur", direccion: "Calle Industrial #55, Zona Industrial", tipo: "Bodega", metros: 200, estado: "disponible", descripcion: "Gran altura y acceso para trailers", documentos: [] },
+        { id: 4, nombre: "Local Las Fuentes", direccion: "Paseo de los Álamos #88, Las Fuentes", tipo: "Comercial", metros: 60, estado: "ocupado", descripcion: "Frente a parque, buena afluencia", documentos: [] },
+        { id: 5, nombre: "Oficina Ejecutiva", direccion: "Torre Corporativa, Piso 8, Av. Reforma", tipo: "Oficina", metros: 120, estado: "mantenimiento", descripcion: "Remodelación en curso", documentos: [] }
+    ],
+    inquilinos: [
+        { id: 101, nombre: "María González", rfc: "GOMA850101HDF", email: "maria.gonzalez@email.com", telefono: "555-1234-5678", contactoEmergencia: "Carlos González 555-8765-4321", documentos: [] },
+        { id: 102, nombre: "Comercializadora XYZ S.A. de C.V.", rfc: "XYZ990101ABC", email: "contacto@xyzcorporativo.com", telefono: "555-5678-9012", contactoEmergencia: "Laura Méndez 555-4321-0987", documentos: [] },
+        { id: 103, nombre: "Juan Pérez Ramírez", rfc: "PEJU900101HDF", email: "juan.perez@email.com", telefono: "555-9012-3456", contactoEmergencia: "Ana Pérez 555-6543-2109", documentos: [] }
+    ],
+    contratos: [
+        { id: 1, localId: 1, inquilinoId: 101, fechaInicio: "2025-01-01", fechaFin: "2025-12-31", montoRenta: 15000, diaPago: 5, deposito: 15000, estado: "vigente", clausulas: "Pago puntual requerido. Mantenimiento a cargo del inquilino.", documentoUrl: "" },
+        { id: 2, localId: 2, inquilinoId: 102, fechaInicio: "2024-06-01", fechaFin: "2025-06-30", montoRenta: 22000, diaPago: 10, deposito: 22000, estado: "vigente", clausulas: "Incluye servicios de limpieza.", documentoUrl: "" },
+        { id: 3, localId: 4, inquilinoId: 103, fechaInicio: "2025-03-01", fechaFin: "2026-02-28", montoRenta: 18000, diaPago: 15, deposito: 18000, estado: "vigente", clausulas: "No se permiten modificaciones estructurales.", documentoUrl: "" }
+    ],
+    pagos: [
+        { id: 1, contratoId: 1, fechaPago: "2026-06-05", monto: 15000, metodo: "Transferencia", comprobante: "TRX-2026-06-01", mesCorrespondiente: "2026-06", registradoPor: "admin", observaciones: "" },
+        { id: 2, contratoId: 2, fechaPago: "2026-06-10", monto: 22000, metodo: "Efectivo", comprobante: "EFE-2026-06-01", mesCorrespondiente: "2026-06", registradoPor: "cobrador1", observaciones: "Pago en ventanilla" },
+        { id: 3, contratoId: 1, fechaPago: "2026-05-05", monto: 15000, metodo: "Transferencia", comprobante: "TRX-2026-05-01", mesCorrespondiente: "2026-05", registradoPor: "admin", observaciones: "" },
+        { id: 4, contratoId: 3, fechaPago: "2026-05-15", monto: 18000, metodo: "Transferencia", comprobante: "TRX-2026-05-03", mesCorrespondiente: "2026-05", registradoPor: "admin", observaciones: "" },
+        { id: 5, contratoId: 3, fechaPago: "2026-04-15", monto: 18000, metodo: "Transferencia", comprobante: "TRX-2026-04-02", mesCorrespondiente: "2026-04", registradoPor: "admin", observaciones: "" },
+        { id: 6, contratoId: 3, fechaPago: "2026-03-15", monto: 18000, metodo: "Transferencia", comprobante: "TRX-2026-03-01", mesCorrespondiente: "2026-03", registradoPor: "admin", observaciones: "" }
+    ],
+    usuarios: [
+        { id: 'u1', email: 'admin@rentas.com', password: '123456', rol: 'admin', nombre: 'Administrador', inquilinoId: null },
+        { id: 'u2', email: 'cobrador@rentas.com', password: '123456', rol: 'cobrador', nombre: 'Cobrador Principal', inquilinoId: null },
+        { id: 'u3', email: 'maria.gonzalez@email.com', password: '123456', rol: 'inquilino', nombre: 'María González', inquilinoId: 101 }
+    ],
+    notificaciones: [
+        { id: 1, destinatario: 'admin', titulo: 'Contrato próximo a vencer', mensaje: 'El contrato del Local Centro #1 vence en 30 días', fecha: new Date().toISOString(), leida: false, tipo: 'vencimiento', enlace: '#contrato-1' },
+        { id: 2, destinatario: 'admin', titulo: 'Pago atrasado', mensaje: 'El inquilino Juan Pérez no ha realizado el pago del mes de junio', fecha: new Date().toISOString(), leida: false, tipo: 'atraso', enlace: '#pagos' }
+    ],
+    configuracion: {
+        interesesMoratorios: 0.5,
+        diasRecordatorio: 3,
+        empresa: "RentasPro S.A. de C.V.",
+        telefono: "555-0000-0000",
+        email: "contacto@rentaspro.com"
+    },
+    nextIds: { locales: 6, inquilinos: 104, contratos: 4, pagos: 7, notificaciones: 3 }
+};
+
+let data = null;
+let currentUser = null;
+let currentView = 'dashboard';
+
+function loadData() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            // Asegurar que todas las propiedades existan
+            ['locales','inquilinos','contratos','pagos','usuarios','notificaciones','configuracion','nextIds'].forEach(k => {
+                if (!parsed[k]) parsed[k] = DEFAULT_DATA[k];
+            });
+            data = parsed;
+            return data;
+        } catch(e) { console.warn('Error cargando datos, usando defaults'); }
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_DATA));
+    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    return data;
+}
+
+function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function getNextId(collection) {
+    if (!data.nextIds[collection]) data.nextIds[collection] = 1;
+    const next = data.nextIds[collection];
+    data.nextIds[collection] = next + 1;
+    saveData();
+    return next;
+}
+
+function refreshData() {
+    loadData();
+    navigateTo(currentView);
+}
+
+// =====================================================================
+// 2. SESIÓN Y ROLES
+// =====================================================================
+function login() {
+    if (!data) loadData();
+    
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const selectedRol = document.getElementById('roleSelector').value;
+
+    let user = data.usuarios.find(u => u.email === email && u.password === password);
+    if (!user) {
+        // Intentar con credenciales por defecto según rol
+        if (selectedRol === 'admin' && email === 'admin@rentas.com') {
+            user = data.usuarios[0];
+        } else if (selectedRol === 'cobrador' && email === 'cobrador@rentas.com') {
+            user = data.usuarios[1];
+        } else if (selectedRol === 'inquilino' && email === 'maria.gonzalez@email.com') {
+            user = data.usuarios[2];
+        } else {
+            showToast('Usuario o contraseña incorrectos', 'error');
+            return;
+        }
+    }
+
+    user.rol = selectedRol;
+    currentUser = { ...user };
+
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+
+    const rolesMap = { admin: 'Administrador', cobrador: 'Cobrador', inquilino: 'Inquilino' };
+    document.getElementById('userRoleBadge').innerText = rolesMap[currentUser.rol];
+    document.getElementById('userRoleBadgeSide').innerText = rolesMap[currentUser.rol];
+    document.getElementById('userNameDisplay').innerText = currentUser.email;
+    document.getElementById('fechaActual').innerText = new Date().toLocaleDateString('es-ES', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+    });
+
+    updateNavVisibility();
+    updateNotificationBadge();
+    generateAutoNotifications();
+    navigateTo('dashboard');
+
+    if (window.innerWidth < 768) closeSidebar();
+    showToast(`Bienvenido ${user.nombre}`, 'success');
+}
+
+function logout() {
+    currentUser = null;
+    document.getElementById('appScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('notifDropdown').classList.add('hidden');
+}
+
+function updateNavVisibility() {
+    const isAdmin = currentUser.rol === 'admin';
+    const isCobrador = currentUser.rol === 'cobrador';
+    const isInquilino = currentUser.rol === 'inquilino';
+
+    const adminOnly = ['nav-inquilinos', 'nav-contratos', 'nav-usuarios', 'nav-documentos', 'nav-configuracion'];
+    adminOnly.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isAdmin ? 'flex' : 'none';
+    });
+
+    ['nav-locales', 'nav-pagos', 'nav-morosidad', 'nav-reportes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (isAdmin || isCobrador) ? 'flex' : 'none';
+    });
+
+    if (isInquilino) {
+        ['nav-locales','nav-pagos','nav-morosidad','nav-reportes','nav-contratos','nav-inquilinos','nav-usuarios','nav-documentos','nav-configuracion'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('sidebar-closed');
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.add('sidebar-closed');
+}
+
+// =====================================================================
+// 3. NOTIFICACIONES
+// =====================================================================
+function generateAutoNotifications() {
+    // Generar notificaciones automáticas
+    const hoy = new Date();
+    const notifCreadas = data.notificaciones.filter(n => n.fecha.includes(new Date().toISOString().split('T')[0]));
+    
+    // Contratos a vencer
+    const contratos = data.contratos.filter(c => c.estado === 'vigente');
+    contratos.forEach(c => {
+        const fin = new Date(c.fechaFin);
+        const diff = Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24));
+        if (diff > 0 && diff <= 30 && !data.notificaciones.some(n => n.tipo === 'vencimiento' && n.destinatario === 'admin' && n.fecha.includes(c.fechaFin))) {
+            const local = getLocalById(c.localId);
+            data.notificaciones.push({
+                id: getNextId('notificaciones'),
+                destinatario: 'admin',
+                titulo: 'Contrato próximo a vencer',
+                mensaje: `El contrato de ${local ? local.nombre : 'local'} vence en ${diff} días (${c.fechaFin})`,
+                fecha: new Date().toISOString(),
+                leida: false,
+                tipo: 'vencimiento',
+                enlace: `#contrato-${c.id}`
+            });
+        }
+    });
+
+    // Pagos atrasados
+    data.contratos.filter(c => c.estado === 'vigente').forEach(c => {
+        const estado = calcularEstadoPago(c);
+        if (estado === 'atrasado') {
+            const local = getLocalById(c.localId);
+            const inquilino = getInquilinoById(c.inquilinoId);
+            if (!data.notificaciones.some(n => n.tipo === 'atraso' && n.fecha.includes(new Date().toISOString().split('T')[0]) && n.destinatario === 'admin')) {
+                data.notificaciones.push({
+                    id: getNextId('notificaciones'),
+                    destinatario: 'admin',
+                    titulo: 'Pago atrasado',
+                    mensaje: `${inquilino ? inquilino.nombre : 'Inquilino'} no ha pagado la renta de ${local ? local.nombre : 'local'}`,
+                    fecha: new Date().toISOString(),
+                    leida: false,
+                    tipo: 'atraso',
+                    enlace: `#pagos-${c.id}`
+                });
+            }
+        }
+    });
+
+    saveData();
+    updateNotificationBadge();
+}
+
+function updateNotificationBadge() {
+    const unread = data.notificaciones.filter(n => !n.leida && (n.destinatario === currentUser.rol || n.destinatario === currentUser.id || n.destinatario === 'todos')).length;
+    document.getElementById('notifBadge').innerText = unread || '0';
+    document.getElementById('notifBadgeSidebar').innerText = unread || '0';
+}
+
+function toggleNotifications() {
+    const dropdown = document.getElementById('notifDropdown');
+    dropdown.classList.toggle('hidden');
+    if (!dropdown.classList.contains('hidden')) {
+        renderNotifications();
+    }
+}
+
+function renderNotifications() {
+    const container = document.getElementById('notifList');
+    const userNotifs = data.notificaciones
+        .filter(n => n.destinatario === currentUser.rol || n.destinatario === currentUser.id || n.destinatario === 'todos')
+        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+    if (userNotifs.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 text-sm">No hay notificaciones</div>`;
+        return;
+    }
+
+    container.innerHTML = userNotifs.map(n => `
+        <div class="notif-item ${!n.leida ? 'unread' : ''}" onclick="markAsRead(${n.id})">
+            <div class="flex justify-between items-start">
+                <div>
+                    <div class="font-medium text-sm text-gray-800">${n.titulo}</div>
+                    <div class="text-xs text-gray-600 mt-0.5">${n.mensaje}</div>
+                </div>
+                ${!n.leida ? '<span class="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></span>' : ''}
+            </div>
+            <div class="notif-time mt-1">${formatDate(n.fecha)}</div>
+        </div>
+    `).join('');
+}
+
+function markAsRead(id) {
+    const notif = data.notificaciones.find(n => n.id === id);
+    if (notif) {
+        notif.leida = true;
+        saveData();
+        updateNotificationBadge();
+        renderNotifications();
+    }
+}
+
+function markAllRead() {
+    data.notificaciones.forEach(n => {
+        if (n.destinatario === currentUser.rol || n.destinatario === currentUser.id) {
+            n.leida = true;
+        }
+    });
+    saveData();
+    updateNotificationBadge();
+    renderNotifications();
+}
+
+// =====================================================================
+// 4. FUNCIONES AUXILIARES DE NEGOCIO
+// =====================================================================
+function getLocalById(id) { return data.locales.find(l => l.id === id); }
+function getInquilinoById(id) { return data.inquilinos.find(i => i.id === id); }
+function getContratoById(id) { return data.contratos.find(c => c.id === id); }
+function getContratosByLocal(localId) { return data.contratos.filter(c => c.localId === localId); }
+function getContratosByInquilino(inquilinoId) { return data.contratos.filter(c => c.inquilinoId === inquilinoId); }
+function getContratoVigenteByLocal(localId) { return data.contratos.find(c => c.localId === localId && c.estado === 'vigente'); }
+function getPagosByContrato(contratoId) { return data.pagos.filter(p => p.contratoId === contratoId).sort((a,b) => new Date(b.fechaPago) - new Date(a.fechaPago)); }
+function getPagosByMes(mes) { return data.pagos.filter(p => p.mesCorrespondiente === mes); }
+
+function calcularEstadoPago(contrato) {
+    if (!contrato || contrato.estado !== 'vigente') return 'sin_contrato';
+    
+    const hoy = new Date();
+    const mesActual = hoy.getMonth() + 1;
+    const añoActual = hoy.getFullYear();
+    const mesStr = `${añoActual}-${String(mesActual).padStart(2,'0')}`;
+    
+    const pagos = getPagosByContrato(contrato.id);
+    const pagoMes = pagos.some(p => p.mesCorrespondiente === mesStr);
+    
+    if (pagoMes) return 'pagado';
+    
+    const diaPago = contrato.diaPago;
+    const fechaVenc = new Date(añoActual, mesActual - 1, diaPago);
+    const diffDias = Math.ceil((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
+    
+    if (diffDias <= 0) return 'al_dia';
+    return 'atrasado';
+}
+
+function calcularDeuda(contrato) {
+    if (!contrato || contrato.estado !== 'vigente') return 0;
+    
+    const hoy = new Date();
+    const mesActual = hoy.getMonth() + 1;
+    const añoActual = hoy.getFullYear();
+    let deuda = 0;
+    let mesesAtraso = 0;
+    
+    // Verificar meses anteriores
+    for (let i = 0; i < 12; i++) {
+        let d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+        const mesStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}`;
+        const pagos = getPagosByContrato(contrato.id);
+        const pagoMes = pagos.some(p => p.mesCorrespondiente === mesStr);
+        
+        if (!pagoMes) {
+            deuda += contrato.montoRenta;
+            mesesAtraso++;
+        }
+    }
+    
+    return deuda;
+}
+
+function calcularDiasAtraso(contrato) {
+    if (!contrato || contrato.estado !== 'vigente') return 0;
+    
+    const estado = calcularEstadoPago(contrato);
+    if (estado !== 'atrasado') return 0;
+    
+    const hoy = new Date();
+    const diaPago = contrato.diaPago;
+    const mesActual = hoy.getMonth() + 1;
+    const añoActual = hoy.getFullYear();
+    const fechaVenc = new Date(añoActual, mesActual - 1, diaPago);
+    
+    return Math.ceil((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
+}
+
+function getOcupacion() {
+    const total = data.locales.length;
+    const ocupados = data.locales.filter(l => l.estado === 'ocupado').length;
+    const enMantenimiento = data.locales.filter(l => l.estado === 'mantenimiento').length;
+    return { total, ocupados, libres: total - ocupados - enMantenimiento, mantenimiento: enMantenimiento, porcentaje: total ? Math.round((ocupados/total)*100) : 0 };
+}
+
+function getIngresosMensuales() {
+    const meses = [];
+    const hoy = new Date();
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const total = data.pagos.filter(p => p.mesCorrespondiente === key).reduce((sum, p) => sum + p.monto, 0);
+        meses.push({ mes: key, total });
+    }
+    return meses;
+}
+
+function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function showToast(message, type = 'info') {
+    const colors = {
+        info: 'bg-blue-500',
+        success: 'bg-green-500',
+        error: 'bg-red-500',
+        warning: 'bg-yellow-500'
+    };
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 ${colors[type] || colors.info} text-white px-6 py-3 rounded-xl shadow-xl z-50 text-sm font-medium transition-all transform translate-y-0`;
+    toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>${message}`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-4');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// =====================================================================
+// 5. NAVEGACIÓN
+// =====================================================================
+function navigateTo(view) {
+    if (!currentUser) return;
+    currentView = view;
+    
+    if (currentUser.rol === 'inquilino') {
+        renderVistaInquilino();
+        document.getElementById('pageTitle').innerText = 'Mi Panel';
+        return;
+    }
+
+    const titles = {
+        dashboard: 'Panel de Control',
+        locales: 'Gestión de Locales',
+        inquilinos: 'Gestión de Inquilinos',
+        contratos: 'Contratos de Arrendamiento',
+        pagos: 'Registro de Pagos',
+        morosidad: 'Morosidad y Cobranza',
+        reportes: 'Reportes y Estadísticas',
+        documentos: 'Documentación',
+        usuarios: 'Usuarios del Sistema',
+        configuracion: 'Configuración'
+    };
+    document.getElementById('pageTitle').innerText = titles[view] || 'Dashboard';
+
+    document.querySelectorAll('.sidebar .nav-item').forEach(a => a.classList.remove('active'));
+    const navMap = {
+        dashboard: 'nav-dashboard', locales: 'nav-locales', inquilinos: 'nav-inquilinos',
+        contratos: 'nav-contratos', pagos: 'nav-pagos', morosidad: 'nav-morosidad',
+        reportes: 'nav-reportes', documentos: 'nav-documentos', 
+        usuarios: 'nav-usuarios', configuracion: 'nav-configuracion'
+    };
+    const active = document.getElementById(navMap[view]);
+    if (active) active.classList.add('active');
+
+    if (window.innerWidth < 768) closeSidebar();
+
+    switch(view) {
+        case 'dashboard': renderDashboard(); break;
+        case 'locales': renderLocales(); break;
+        case 'inquilinos': renderInquilinos(); break;
+        case 'contratos': renderContratos(); break;
+        case 'pagos': renderPagos(); break;
+        case 'morosidad': renderMorosidad(); break;
+        case 'reportes': renderReportes(); break;
+        case 'documentos': renderDocumentos(); break;
+        case 'usuarios': renderUsuarios(); break;
+        case 'configuracion': renderConfiguracion(); break;
+        default: renderDashboard();
+    }
+}
+
+// =====================================================================
+// 6. RENDERIZADO - DASHBOARD
+// =====================================================================
+function renderDashboard() {
+    const { total, ocupados, libres, mantenimiento, porcentaje } = getOcupacion();
+    const totalIngresos = data.pagos.reduce((sum, p) => sum + p.monto, 0);
+    const ingresosMes = getIngresosMensuales();
+    const mesActual = ingresosMes[ingresosMes.length - 1]?.total || 0;
+    const mesAnterior = ingresosMes[ingresosMes.length - 2]?.total || 0;
+    const cambioPorcentaje = mesAnterior ? Math.round(((mesActual - mesAnterior) / mesAnterior) * 100) : 0;
+    
+    // Contratos a vencer
+    const hoy = new Date();
+    const contratosVencer = data.contratos.filter(c => {
+        const fin = new Date(c.fechaFin);
+        const diff = Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24));
+        return c.estado === 'vigente' && diff > 0 && diff <= 30;
+    });
+
+    let html = `
+        <!-- Tarjetas de resumen -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="card-dashboard">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Total Locales</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">${total}</p>
+                        <p class="text-xs text-gray-400 mt-1">${ocupados} ocupados · ${libres} libres</p>
+                    </div>
+                    <div class="icon bg-blue-50 text-blue-600"><i class="fas fa-store"></i></div>
+                </div>
+            </div>
+            <div class="card-dashboard">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Ingresos del Mes</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">$${mesActual.toLocaleString()}</p>
+                        <p class="text-xs ${cambioPorcentaje >= 0 ? 'text-green-500' : 'text-red-500'} mt-1">
+                            ${cambioPorcentaje >= 0 ? '↑' : '↓'} ${Math.abs(cambioPorcentaje)}% vs mes anterior
+                        </p>
+                    </div>
+                    <div class="icon bg-green-50 text-green-600"><i class="fas fa-coins"></i></div>
+                </div>
+            </div>
+            <div class="card-dashboard">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Ocupación</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">${porcentaje}%</p>
+                        <div class="w-full bg-gray-200 h-1.5 rounded-full mt-2">
+                            <div class="bg-blue-600 h-1.5 rounded-full" style="width: ${porcentaje}%"></div>
+                        </div>
+                    </div>
+                    <div class="icon bg-purple-50 text-purple-600"><i class="fas fa-chart-pie"></i></div>
+                </div>
+            </div>
+            <div class="card-dashboard">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Próximos Vencimientos</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">${contratosVencer.length}</p>
+                        <p class="text-xs text-gray-400 mt-1">Contratos a vencer en 30 días</p>
+                    </div>
+                    <div class="icon bg-orange-50 text-orange-600"><i class="fas fa-clock"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div class="lg:col-span-2 card-dashboard">
+                <h3 class="font-semibold text-gray-700 mb-4"><i class="fas fa-chart-line mr-2 text-blue-500"></i>Ingresos Mensuales</h3>
+                <canvas id="incomeChart" height="120"></canvas>
+            </div>
+            <div class="card-dashboard">
+                <h3 class="font-semibold text-gray-700 mb-4"><i class="fas fa-chart-pie mr-2 text-purple-500"></i>Distribución de Locales</h3>
+                <canvas id="ocupacionChart" height="140"></canvas>
+            </div>
+        </div>
+
+        <!-- Actividad reciente -->
+        <div class="card-dashboard">
+            <h3 class="font-semibold text-gray-700 mb-4"><i class="fas fa-history mr-2 text-gray-400"></i>Actividad Reciente</h3>
+            <div class="space-y-2">
+                ${data.pagos.slice(-3).reverse().map(p => {
+                    const c = getContratoById(p.contratoId);
+                    const l = c ? getLocalById(c.localId) : null;
+                    const i = c ? getInquilinoById(c.inquilinoId) : null;
+                    return `
+                        <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                            <div>
+                                <span class="text-sm font-medium text-gray-800">${i ? i.nombre : 'N/A'}</span>
+                                <span class="text-xs text-gray-400 ml-2">${l ? l.nombre : ''}</span>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <span class="text-sm text-green-600 font-semibold">$${p.monto.toLocaleString()}</span>
+                                <span class="text-xs text-gray-400">${formatDate(p.fechaPago)}</span>
+                                <span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">${p.metodo}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+                ${data.pagos.length === 0 ? '<p class="text-center text-gray-400 text-sm py-4">No hay pagos registrados</p>' : ''}
+            </div>
+        </div>
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+
+    // Inicializar gráficos
+    setTimeout(() => {
+        const ctxIncome = document.getElementById('incomeChart');
+        if (ctxIncome) {
+            const meses = getIngresosMensuales();
+            new Chart(ctxIncome, {
+                type: 'bar',
+                data: {
+                    labels: meses.map(m => m.mes),
+                    datasets: [{ 
+                        label: 'Ingresos ($)', 
+                        data: meses.map(m => m.total), 
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        const ctxOcupacion = document.getElementById('ocupacionChart');
+        if (ctxOcupacion) {
+            const { ocupados, libres, mantenimiento } = getOcupacion();
+            new Chart(ctxOcupacion, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Ocupados', 'Disponibles', 'Mantenimiento'],
+                    datasets: [{ 
+                        data: [ocupados, libres, mantenimiento],
+                        backgroundColor: ['#3b82f6', '#22c55e', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+    }, 100);
+}
+
+// =====================================================================
+// 7. RENDERIZADO - LOCALES
+// =====================================================================
+function renderLocales() {
+    let html = `
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-lg text-gray-800">Locales Comerciales</h3>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">${data.locales.length}</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="showFormLocal()" class="btn-blue text-sm"><i class="fas fa-plus mr-2"></i>Nuevo Local</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    `;
+    
+    data.locales.forEach(l => {
+        const badgeClass = l.estado === 'ocupado' ? 'badge-ocupado' : l.estado === 'disponible' ? 'badge-disponible' : 'badge-mantenimiento';
+        const contrato = getContratoVigenteByLocal(l.id);
+        const inquilino = contrato ? getInquilinoById(contrato.inquilinoId) : null;
+        
+        html += `
+            <div class="card-dashboard hover:shadow-md transition">
+                <div class="flex justify-between items-start mb-3">
+                    <h4 class="font-bold text-gray-800 text-lg">${l.nombre}</h4>
+                    <span class="badge-estado ${badgeClass}">${l.estado}</span>
+                </div>
+                <p class="text-sm text-gray-500"><i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>${l.direccion}</p>
+                <div class="flex flex-wrap gap-2 mt-2 text-sm text-gray-600">
+                    <span><i class="fas fa-tag mr-1 text-gray-400"></i>${l.tipo}</span>
+                    <span><i class="fas fa-arrows-alt mr-1 text-gray-400"></i>${l.metros}m²</span>
+                </div>
+                ${contrato ? `
+                    <div class="mt-2 p-2 bg-blue-50 rounded-lg text-xs">
+                        <span class="font-medium text-blue-700">Ocupado por:</span>
+                        <span class="text-blue-600">${inquilino ? inquilino.nombre : 'N/A'}</span>
+                    </div>
+                ` : ''}
+                <div class="mt-4 pt-4 border-t flex flex-wrap justify-end gap-2">
+                    <button onclick="showFormLocal(${l.id})" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg text-xs font-medium transition"><i class="fas fa-edit mr-1"></i>Editar</button>
+                    ${currentUser.rol === 'admin' ? `
+                        <button onclick="eliminarLocal(${l.id})" class="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg text-xs font-medium transition"><i class="fas fa-trash mr-1"></i>Eliminar</button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+function showFormLocal(id = null) {
+    const local = id ? data.locales.find(l => l.id === id) : null;
+    const esAdmin = currentUser.rol === 'admin';
+    
+    let html = `
+        <h3 class="font-bold text-xl text-gray-800 mb-4">${local ? '✏️ Modificar Local' : '🏢 Nuevo Local'}</h3>
+        <form id="fLocal" onsubmit="saveLocal(event, ${id || 'null'})">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="form-label">Nombre Comercial *</label>
+                    <input type="text" id="fNom" value="${local ? local.nombre : ''}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Dirección *</label>
+                    <input type="text" id="fDir" value="${local ? local.direccion : ''}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Tipo</label>
+                    <select id="fTipo" class="form-input">
+                        ${['Comercial','Oficina','Bodega','Otro'].map(t => `
+                            <option value="${t}" ${local && local.tipo === t ? 'selected' : ''}>${t}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Metros Cuadrados</label>
+                    <input type="number" id="fMet" value="${local ? local.metros : 40}" class="form-input" min="1">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Descripción</label>
+                    <textarea id="fDesc" rows="2" class="form-input">${local ? local.descripcion : ''}</textarea>
+                </div>
+                ${esAdmin ? `
+                    <div>
+                        <label class="form-label">Estado</label>
+                        <select id="fEstado" class="form-input">
+                            ${['disponible','ocupado','mantenimiento'].map(e => `
+                                <option value="${e}" ${local && local.estado === e ? 'selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                ` : ''}
+            </div>
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition text-sm">Cancelar</button>
+                <button type="submit" class="btn-blue px-6 py-2 text-sm"><i class="fas fa-save mr-2"></i>Guardar</button>
+            </div>
+        </form>
+    `;
+    openModal(html);
+}
+
+function saveLocal(e, id) {
+    e.preventDefault();
+    const nombre = document.getElementById('fNom').value.trim();
+    const direccion = document.getElementById('fDir').value.trim();
+    const tipo = document.getElementById('fTipo').value;
+    const metros = parseInt(document.getElementById('fMet').value) || 0;
+    const descripcion = document.getElementById('fDesc')?.value || '';
+    
+    if (!nombre || !direccion) {
+        showToast('Nombre y dirección son requeridos', 'error');
+        return;
+    }
+    
+    if (id) {
+        const l = data.locales.find(loc => loc.id === id);
+        if (l) {
+            l.nombre = nombre;
+            l.direccion = direccion;
+            l.tipo = tipo;
+            l.metros = metros;
+            l.descripcion = descripcion;
+            if (document.getElementById('fEstado')) {
+                l.estado = document.getElementById('fEstado').value;
+            }
+        }
+    } else {
+        data.locales.push({
+            id: getNextId('locales'),
+            nombre, direccion, tipo, metros, descripcion,
+            estado: document.getElementById('fEstado')?.value || 'disponible',
+            documentos: []
+        });
+    }
+    saveData();
+    closeModal();
+    renderLocales();
+    showToast(`Local ${id ? 'actualizado' : 'creado'} correctamente`, 'success');
+}
+
+function eliminarLocal(id) {
+    if (!confirm('¿Seguro que deseas eliminar este local? Esto no eliminará contratos asociados.')) return;
+    data.locales = data.locales.filter(l => l.id !== id);
+    saveData();
+    renderLocales();
+    showToast('Local eliminado', 'info');
+}
+
+// =====================================================================
+// 8. RENDERIZADO - INQUILINOS
+// =====================================================================
+function renderInquilinos() {
+    let html = `
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-lg text-gray-800">Inquilinos Registrados</h3>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">${data.inquilinos.length}</span>
+            </div>
+            <button onclick="showFormInquilino()" class="btn-blue text-sm"><i class="fas fa-user-plus mr-2"></i>Nuevo Inquilino</button>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre / Razón Social</th>
+                        <th>RFC</th>
+                        <th>Contacto</th>
+                        <th>Local Actual</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.inquilinos.forEach(i => {
+        const contrato = getContratoVigenteByLocal(i.id);
+        const local = contrato ? getLocalById(contrato.localId) : null;
+        html += `
+            <tr>
+                <td class="font-medium text-gray-800">${i.nombre}</td>
+                <td class="font-mono text-xs text-gray-600">${i.rfc || 'N/A'}</td>
+                <td>
+                    <div class="text-sm">${i.email}</div>
+                    <div class="text-xs text-gray-400">${i.telefono || 'Sin teléfono'}</div>
+                </td>
+                <td>${local ? local.nombre : '<span class="text-gray-400 text-xs">Sin local</span>'}</td>
+                <td class="text-center space-x-2 whitespace-nowrap">
+                    <button onclick="showFormInquilino(${i.id})" class="text-blue-600 hover:text-blue-800 transition"><i class="fas fa-edit"></i></button>
+                    ${currentUser.rol === 'admin' ? `
+                        <button onclick="eliminarInquilino(${i.id})" class="text-red-600 hover:text-red-800 transition"><i class="fas fa-trash"></i></button>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+            ${data.inquilinos.length === 0 ? '<div class="text-center text-gray-400 py-8">No hay inquilinos registrados</div>' : ''}
+        </div>
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+function showFormInquilino(id = null) {
+    const inquilino = id ? data.inquilinos.find(i => i.id === id) : null;
+    
+    let html = `
+        <h3 class="font-bold text-xl text-gray-800 mb-4">${inquilino ? '✏️ Modificar Inquilino' : '👤 Nuevo Inquilino'}</h3>
+        <form id="fInquilino" onsubmit="saveInquilino(event, ${id || 'null'})">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label class="form-label">Nombre / Razón Social *</label>
+                    <input type="text" id="fNom" value="${inquilino ? inquilino.nombre : ''}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">RFC</label>
+                    <input type="text" id="fRfc" value="${inquilino ? inquilino.rfc : ''}" class="form-input">
+                </div>
+                <div>
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" id="fTel" value="${inquilino ? inquilino.telefono : ''}" class="form-input">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Correo Electrónico *</label>
+                    <input type="email" id="fEmail" value="${inquilino ? inquilino.email : ''}" class="form-input" required>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Contacto de Emergencia</label>
+                    <input type="text" id="fContacto" value="${inquilino ? inquilino.contactoEmergencia : ''}" class="form-input" placeholder="Nombre y teléfono">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition text-sm">Cancelar</button>
+                <button type="submit" class="btn-blue px-6 py-2 text-sm"><i class="fas fa-save mr-2"></i>Guardar</button>
+            </div>
+        </form>
+    `;
+    openModal(html);
+}
+
+function saveInquilino(e, id) {
+    e.preventDefault();
+    const nombre = document.getElementById('fNom').value.trim();
+    const email = document.getElementById('fEmail').value.trim();
+    const rfc = document.getElementById('fRfc').value.trim();
+    const telefono = document.getElementById('fTel').value.trim();
+    const contactoEmergencia = document.getElementById('fContacto').value.trim();
+    
+    if (!nombre || !email) {
+        showToast('Nombre y correo son requeridos', 'error');
+        return;
+    }
+    
+    if (id) {
+        const i = data.inquilinos.find(inc => inc.id === id);
+        if (i) {
+            i.nombre = nombre;
+            i.email = email;
+            i.rfc = rfc;
+            i.telefono = telefono;
+            i.contactoEmergencia = contactoEmergencia;
+        }
+    } else {
+        data.inquilinos.push({
+            id: getNextId('inquilinos'),
+            nombre, email, rfc, telefono, contactoEmergencia,
+            documentos: []
+        });
+    }
+    saveData();
+    closeModal();
+    renderInquilinos();
+    showToast(`Inquilino ${id ? 'actualizado' : 'creado'} correctamente`, 'success');
+}
+
+function eliminarInquilino(id) {
+    if (!confirm('¿Seguro que deseas eliminar este inquilino?')) return;
+    data.inquilinos = data.inquilinos.filter(i => i.id !== id);
+    saveData();
+    renderInquilinos();
+    showToast('Inquilino eliminado', 'info');
+}
+
+// =====================================================================
+// 9. RENDERIZADO - CONTRATOS
+// =====================================================================
+function renderContratos() {
+    let html = `
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-lg text-gray-800">Contratos de Arrendamiento</h3>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">${data.contratos.length}</span>
+            </div>
+            ${currentUser.rol === 'admin' ? `
+                <button onclick="showFormContrato()" class="btn-blue text-sm"><i class="fas fa-file-signature mr-2"></i>Nuevo Contrato</button>
+            ` : ''}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    `;
+    
+    data.contratos.forEach(c => {
+        const local = getLocalById(c.localId);
+        const inquilino = getInquilinoById(c.inquilinoId);
+        const estadoPago = calcularEstadoPago(c);
+        const badgePago = estadoPago === 'pagado' ? 'badge-pagado' : estadoPago === 'atrasado' ? 'badge-atrasado' : 'bg-gray-100 text-gray-600';
+        const diasAtraso = calcularDiasAtraso(c);
+        
+        html += `
+            <div class="card-dashboard border-l-4 ${c.estado === 'vigente' ? 'border-l-green-500' : 'border-l-gray-300'}">
+                <div class="flex justify-between items-start mb-2">
+                    <h4 class="font-bold text-gray-800">${local ? local.nombre : 'Local Desconocido'}</h4>
+                    <span class="badge-estado ${c.estado === 'vigente' ? 'badge-vigente' : 'badge-vencido'}">${c.estado}</span>
+                </div>
+                <p class="text-sm text-gray-600"><i class="fas fa-user mr-2 text-gray-400"></i>${inquilino ? inquilino.nombre : 'Desconocido'}</p>
+                <div class="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
+                    <span><i class="far fa-calendar-alt mr-1"></i>${c.fechaInicio} → ${c.fechaFin}</span>
+                    <span><i class="fas fa-calendar-day mr-1"></i>Día ${c.diaPago}</span>
+                </div>
+                <div class="flex flex-wrap items-center justify-between mt-3 pt-3 border-t">
+                    <span class="font-bold text-blue-600">$${c.montoRenta.toLocaleString()}/mes</span>
+                    <span class="badge-estado ${badgePago} text-xs">
+                        ${estadoPago === 'pagado' ? '✅ Pagado' : estadoPago === 'atrasado' ? `⚠️ ${diasAtraso} días` : '📅 Al día'}
+                    </span>
+                </div>
+                ${currentUser.rol === 'admin' ? `
+                    <div class="mt-3 pt-3 border-t flex justify-end gap-2">
+                        <button onclick="showFormContrato(${c.id})" class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg text-xs font-medium transition"><i class="fas fa-edit mr-1"></i>Editar</button>
+                        <button onclick="eliminarContrato(${c.id})" class="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg text-xs font-medium transition"><i class="fas fa-trash mr-1"></i>Eliminar</button>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+function showFormContrato(id = null) {
+    const contrato = id ? data.contratos.find(c => c.id === id) : null;
+    const localesDisponibles = data.locales.filter(l => l.estado === 'disponible' || (contrato && l.id === contrato.localId));
+    
+    let html = `
+        <h3 class="font-bold text-xl text-gray-800 mb-4">${contrato ? '✏️ Modificar Contrato' : '📄 Nuevo Contrato'}</h3>
+        <form id="fContrato" onsubmit="saveContrato(event, ${id || 'null'})">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="form-label">Local *</label>
+                    <select id="fLocal" class="form-input" required>
+                        <option value="">Seleccionar local...</option>
+                        ${data.locales.map(l => `
+                            <option value="${l.id}" ${contrato && contrato.localId === l.id ? 'selected' : ''} ${l.estado !== 'disponible' && (!contrato || contrato.localId !== l.id) ? 'disabled' : ''}>
+                                ${l.nombre} (${l.estado})
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Inquilino *</label>
+                    <select id="fInquilino" class="form-input" required>
+                        <option value="">Seleccionar inquilino...</option>
+                        ${data.inquilinos.map(i => `
+                            <option value="${i.id}" ${contrato && contrato.inquilinoId === i.id ? 'selected' : ''}>${i.nombre}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Fecha Inicio *</label>
+                    <input type="date" id="fInicio" value="${contrato ? contrato.fechaInicio : new Date().toISOString().split('T')[0]}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Fecha Fin *</label>
+                    <input type="date" id="fFin" value="${contrato ? contrato.fechaFin : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Monto Renta Mensual ($) *</label>
+                    <input type="number" id="fMonto" value="${contrato ? contrato.montoRenta : 10000}" class="form-input" min="0" required>
+                </div>
+                <div>
+                    <label class="form-label">Día de Pago *</label>
+                    <input type="number" id="fDiaPago" value="${contrato ? contrato.diaPago : 5}" class="form-input" min="1" max="31" required>
+                </div>
+                <div>
+                    <label class="form-label">Depósito en Garantía ($)</label>
+                    <input type="number" id="fDeposito" value="${contrato ? contrato.deposito : 0}" class="form-input" min="0">
+                </div>
+                <div>
+                    <label class="form-label">Estado</label>
+                    <select id="fEstado" class="form-input">
+                        ${['vigente','vencido','renovado','rescindido'].map(e => `
+                            <option value="${e}" ${contrato && contrato.estado === e ? 'selected' : ''}>${e.charAt(0).toUpperCase() + e.slice(1)}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Cláusulas Especiales</label>
+                    <textarea id="fClausulas" rows="2" class="form-input">${contrato ? contrato.clausulas : ''}</textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition text-sm">Cancelar</button>
+                <button type="submit" class="btn-blue px-6 py-2 text-sm"><i class="fas fa-save mr-2"></i>Guardar</button>
+            </div>
+        </form>
+    `;
+    openModal(html);
+}
+
+function saveContrato(e, id) {
+    e.preventDefault();
+    const localId = parseInt(document.getElementById('fLocal').value);
+    const inquilinoId = parseInt(document.getElementById('fInquilino').value);
+    const fechaInicio = document.getElementById('fInicio').value;
+    const fechaFin = document.getElementById('fFin').value;
+    const montoRenta = parseFloat(document.getElementById('fMonto').value);
+    const diaPago = parseInt(document.getElementById('fDiaPago').value);
+    const deposito = parseFloat(document.getElementById('fDeposito').value) || 0;
+    const estado = document.getElementById('fEstado').value;
+    const clausulas = document.getElementById('fClausulas').value.trim();
+    
+    if (!localId || !inquilinoId || !fechaInicio || !fechaFin || !montoRenta) {
+        showToast('Todos los campos requeridos deben estar llenos', 'error');
+        return;
+    }
+    
+    if (new Date(fechaFin) <= new Date(fechaInicio)) {
+        showToast('La fecha de fin debe ser posterior a la fecha de inicio', 'error');
+        return;
+    }
+    
+    // Verificar que el local no tenga otro contrato vigente
+    const contratoExistente = data.contratos.find(c => c.localId === localId && c.estado === 'vigente' && c.id !== id);
+    if (contratoExistente && estado === 'vigente') {
+        showToast('Este local ya tiene un contrato vigente', 'error');
+        return;
+    }
+    
+    if (id) {
+        const c = data.contratos.find(con => con.id === id);
+        if (c) {
+            c.localId = localId;
+            c.inquilinoId = inquilinoId;
+            c.fechaInicio = fechaInicio;
+            c.fechaFin = fechaFin;
+            c.montoRenta = montoRenta;
+            c.diaPago = diaPago;
+            c.deposito = deposito;
+            c.estado = estado;
+            c.clausulas = clausulas;
+        }
+    } else {
+        data.contratos.push({
+            id: getNextId('contratos'),
+            localId, inquilinoId, fechaInicio, fechaFin,
+            montoRenta, diaPago, deposito, estado,
+            clausulas, documentoUrl: ''
+        });
+    }
+    
+    // Actualizar estado del local
+    const local = data.locales.find(l => l.id === localId);
+    if (local) {
+        local.estado = estado === 'vigente' ? 'ocupado' : 'disponible';
+    }
+    
+    saveData();
+    closeModal();
+    renderContratos();
+    showToast(`Contrato ${id ? 'actualizado' : 'creado'} correctamente`, 'success');
+}
+
+function eliminarContrato(id) {
+    if (!confirm('¿Seguro que deseas eliminar este contrato?')) return;
+    data.contratos = data.contratos.filter(c => c.id !== id);
+    saveData();
+    renderContratos();
+    showToast('Contrato eliminado', 'info');
+}
+
+// =====================================================================
+// 10. RENDERIZADO - PAGOS
+// =====================================================================
+function renderPagos() {
+    const contratosVigentes = data.contratos.filter(c => c.estado === 'vigente');
+    
+    let html = `
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <div class="flex items-center space-x-2">
+                <h3 class="font-bold text-lg text-gray-800">Registro de Pagos</h3>
+                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">${data.pagos.length}</span>
+            </div>
+            <button onclick="showFormPago()" class="btn-green text-sm"><i class="fas fa-plus mr-2"></i>Registrar Pago</button>
+        </div>
+        
+        <!-- Resumen rápido -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="card-dashboard">
+                <p class="text-sm text-gray-500">Total Recaudado</p>
+                <p class="text-xl font-bold text-gray-800">$${data.pagos.reduce((s,p) => s + p.monto, 0).toLocaleString()}</p>
+            </div>
+            <div class="card-dashboard">
+                <p class="text-sm text-gray-500">Pagos del Mes</p>
+                <p class="text-xl font-bold text-gray-800">${data.pagos.filter(p => p.mesCorrespondiente === new Date().toISOString().slice(0,7)).length}</p>
+            </div>
+            <div class="card-dashboard">
+                <p class="text-sm text-gray-500">Contratos Activos</p>
+                <p class="text-xl font-bold text-gray-800">${contratosVigentes.length}</p>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Local / Inquilino</th>
+                        <th>Mes</th>
+                        <th>Monto</th>
+                        <th>Fecha</th>
+                        <th>Método</th>
+                        <th>Registrado por</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.pagos.slice().reverse().forEach(p => {
+        const c = getContratoById(p.contratoId);
+        const l = c ? getLocalById(c.localId) : null;
+        const i = c ? getInquilinoById(c.inquilinoId) : null;
+        const esAdmin = currentUser.rol === 'admin';
+        
+        html += `
+            <tr>
+                <td>
+                    <div class="font-medium text-gray-800">${l ? l.nombre : 'N/A'}</div>
+                    <div class="text-xs text-gray-400">${i ? i.nombre : 'N/A'}</div>
+                </td>
+                <td class="font-mono text-sm">${p.mesCorrespondiente}</td>
+                <td class="font-bold text-green-600">$${p.monto.toLocaleString()}</td>
+                <td class="text-sm">${formatDate(p.fechaPago)}</td>
+                <td><span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">${p.metodo}</span></td>
+                <td class="text-xs text-gray-400">${p.registradoPor || 'N/A'}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+            ${data.pagos.length === 0 ? '<div class="text-center text-gray-400 py-8">No hay pagos registrados</div>' : ''}
+        </div>
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+function showFormPago() {
+    const hoy = new Date();
+    const mesActual = hoy.toISOString().slice(0,7);
+    
+    let html = `
+        <h3 class="font-bold text-xl text-gray-800 mb-4">💳 Registrar Pago</h3>
+        <form id="fPago" onsubmit="savePago(event)">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="form-label">Contrato *</label>
+                    <select id="fContrato" class="form-input" required>
+                        <option value="">Seleccionar contrato...</option>
+                        ${data.contratos.filter(c => c.estado === 'vigente').map(c => {
+                            const l = getLocalById(c.localId);
+                            const i = getInquilinoById(c.inquilinoId);
+                            return `
+                                <option value="${c.id}">
+                                    ${l ? l.nombre : 'Local'} - ${i ? i.nombre : 'Inquilino'} ($${c.montoRenta.toLocaleString()})
+                                </option>
+                            `;
+                        }).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Mes Correspondiente *</label>
+                    <input type="month" id="fMes" value="${mesActual}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Monto Pagado ($) *</label>
+                    <input type="number" id="fMonto" class="form-input" min="0" step="0.01" required>
+                </div>
+                <div>
+                    <label class="form-label">Método de Pago</label>
+                    <select id="fMetodo" class="form-input">
+                        ${['Transferencia','Efectivo','Cheque','Tarjeta','Otro'].map(m => `
+                            <option value="${m}">${m}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Comprobante / Referencia</label>
+                    <input type="text" id="fComprobante" class="form-input" placeholder="Número de referencia o folio">
+                </div>
+                <div>
+                    <label class="form-label">Fecha de Pago</label>
+                    <input type="date" id="fFechaPago" value="${hoy.toISOString().split('T')[0]}" class="form-input">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Observaciones</label>
+                    <textarea id="fObservaciones" rows="2" class="form-input"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition text-sm">Cancelar</button>
+                <button type="submit" class="btn-green px-6 py-2 text-sm"><i class="fas fa-check mr-2"></i>Registrar Pago</button>
+            </div>
+        </form>
+    `;
+    openModal(html);
+}
+
+function savePago(e) {
+    e.preventDefault();
+    const contratoId = parseInt(document.getElementById('fContrato').value);
+    const mesCorrespondiente = document.getElementById('fMes').value;
+    const monto = parseFloat(document.getElementById('fMonto').value);
+    const metodo = document.getElementById('fMetodo').value;
+    const comprobante = document.getElementById('fComprobante').value.trim();
+    const fechaPago = document.getElementById('fFechaPago').value || new Date().toISOString().split('T')[0];
+    const observaciones = document.getElementById('fObservaciones').value.trim();
+    
+    if (!contratoId || !mesCorrespondiente || !monto) {
+        showToast('Contrato, mes y monto son requeridos', 'error');
+        return;
+    }
+    
+    // Verificar que no haya un pago para el mismo mes
+    const existe = data.pagos.some(p => p.contratoId === contratoId && p.mesCorrespondiente === mesCorrespondiente);
+    if (existe) {
+        showToast('Ya existe un pago registrado para este mes', 'warning');
+        return;
+    }
+    
+    data.pagos.push({
+        id: getNextId('pagos'),
+        contratoId,
+        fechaPago,
+        monto,
+        metodo,
+        comprobante: comprobante || `PAGO-${Date.now()}`,
+        mesCorrespondiente,
+        registradoPor: currentUser.nombre || currentUser.email,
+        observaciones
+    });
+    
+    saveData();
+    closeModal();
+    renderPagos();
+    showToast('Pago registrado correctamente', 'success');
+    
+    // Generar notificación
+    const c = getContratoById(contratoId);
+    const i = c ? getInquilinoById(c.inquilinoId) : null;
+    if (i) {
+        data.notificaciones.push({
+            id: getNextId('notificaciones'),
+            destinatario: 'admin',
+            titulo: 'Pago registrado',
+            mensaje: `${i.nombre} realizó un pago de $${monto.toLocaleString()} (${mesCorrespondiente})`,
+            fecha: new Date().toISOString(),
+            leida: false,
+            tipo: 'pago',
+            enlace: '#pagos'
+        });
+        saveData();
+        updateNotificationBadge();
+    }
+}
+
+// =====================================================================
+// 11. RENDERIZADO - MOROSIDAD
+// =====================================================================
+function renderMorosidad() {
+    const contratosVigentes = data.contratos.filter(c => c.estado === 'vigente');
+    const morosos = contratosVigentes.filter(c => calcularEstadoPago(c) === 'atrasado');
+    const deudaTotal = morosos.reduce((sum, c) => sum + calcularDeuda(c), 0);
+    
+    let html = `
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <h3 class="font-bold text-lg text-gray-800"><i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>Morosidad y Cobranza</h3>
+            <div class="flex items-center space-x-2 text-sm">
+                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full">
+                    ${morosos.length} morosos · $${deudaTotal.toLocaleString()} en deuda
+                </span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="card-dashboard">
+                <p class="text-sm text-gray-500">Total Contratos Vigentes</p>
+                <p class="text-2xl font-bold text-gray-800">${contratosVigentes.length}</p>
+            </div>
+            <div class="card-dashboard border-red-200">
+                <p class="text-sm text-gray-500">Deuda Total</p>
+                <p class="text-2xl font-bold text-red-600">$${deudaTotal.toLocaleString()}</p>
+                <p class="text-xs text-gray-400">${morosos.length} contratos con atraso</p>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Inquilino</th>
+                        <th>Local</th>
+                        <th>Renta</th>
+                        <th>Días Atraso</th>
+                        <th>Deuda</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    contratosVigentes.forEach(c => {
+        const estado = calcularEstadoPago(c);
+        const diasAtraso = calcularDiasAtraso(c);
+        const deuda = calcularDeuda(c);
+        const inquilino = getInquilinoById(c.inquilinoId);
+        const local = getLocalById(c.localId);
+        
+        html += `
+            <tr class="${estado === 'atrasado' ? 'bg-red-50' : ''}">
+                <td class="font-medium text-gray-800">${inquilino ? inquilino.nombre : 'N/A'}</td>
+                <td>${local ? local.nombre : 'N/A'}</td>
+                <td>$${c.montoRenta.toLocaleString()}</td>
+                <td>
+                    ${estado === 'atrasado' ? `
+                        <span class="badge-estado badge-atrasado">${diasAtraso} días</span>
+                    ` : estado === 'pagado' ? `
+                        <span class="badge-estado badge-pagado">Pagado</span>
+                    ` : `
+                        <span class="badge-estado bg-gray-100 text-gray-600">Al día</span>
+                    `}
+                </td>
+                <td class="${estado === 'atrasado' ? 'text-red-600 font-bold' : 'text-gray-400'}">
+                    ${estado === 'atrasado' ? `$${deuda.toLocaleString()}` : '$0'}
+                </td>
+                <td>
+                    <button onclick="showFormPagoConContrato(${c.id})" class="btn-green text-xs py-1 px-3"><i class="fas fa-hand-holding-usd mr-1"></i>Registrar Pago</button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+            ${contratosVigentes.length === 0 ? '<div class="text-center text-gray-400 py-8">No hay contratos vigentes</div>' : ''}
+        </div>
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+function showFormPagoConContrato(contratoId) {
+    const c = getContratoById(contratoId);
+    if (!c) return;
+    
+    const hoy = new Date();
+    const mesActual = hoy.toISOString().slice(0,7);
+    const local = getLocalById(c.localId);
+    const inquilino = getInquilinoById(c.inquilinoId);
+    
+    let html = `
+        <h3 class="font-bold text-xl text-gray-800 mb-4">💳 Registrar Pago</h3>
+        <div class="bg-gray-50 p-4 rounded-xl mb-4">
+            <p><strong>Contrato:</strong> ${local ? local.nombre : 'N/A'}</p>
+            <p><strong>Inquilino:</strong> ${inquilino ? inquilino.nombre : 'N/A'}</p>
+            <p><strong>Renta:</strong> $${c.montoRenta.toLocaleString()}</p>
+            <p><strong>Día de pago:</strong> ${c.diaPago}</p>
+        </div>
+        <form id="fPago" onsubmit="savePagoConContrato(event, ${contratoId})">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="form-label">Mes Correspondiente *</label>
+                    <input type="month" id="fMes" value="${mesActual}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Monto ($) *</label>
+                    <input type="number" id="fMonto" value="${c.montoRenta}" class="form-input" min="0" step="0.01" required>
+                </div>
+                <div>
+                    <label class="form-label">Método de Pago</label>
+                    <select id="fMetodo" class="form-input">
+                        ${['Transferencia','Efectivo','Cheque','Tarjeta','Otro'].map(m => `
+                            <option value="${m}">${m}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Comprobante</label>
+                    <input type="text" id="fComprobante" class="form-input" placeholder="Número de referencia">
+                </div>
+                <div>
+                    <label class="form-label">Fecha de Pago</label>
+                    <input type="date" id="fFechaPago" value="${hoy.toISOString().split('T')[0]}" class="form-input">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="form-label">Observaciones</label>
+                    <textarea id="fObservaciones" rows="2" class="form-input"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition text-sm">Cancelar</button>
+                <button type="submit" class="btn-green px-6 py-2 text-sm"><i class="fas fa-check mr-2"></i>Registrar Pago</button>
+            </div>
+        </form>
+    `;
+    openModal(html);
+}
+
+function savePagoConContrato(e, contratoId) {
+    e.preventDefault();
+    const mesCorrespondiente = document.getElementById('fMes').value;
+    const monto = parseFloat(document.getElementById('fMonto').value);
+    const metodo = document.getElementById('fMetodo').value;
+    const comprobante = document.getElementById('fComprobante').value.trim();
+    const fechaPago = document.getElementById('fFechaPago').value || new Date().toISOString().split('T')[0];
+    const observaciones = document.getElementById('fObservaciones').value.trim();
+    
+    if (!mesCorrespondiente || !monto) {
+        showToast('Mes y monto son requeridos', 'error');
+        return;
+    }
+    
+    const existe = data.pagos.some(p => p.contratoId === contratoId && p.mesCorrespondiente === mesCorrespondiente);
+    if (existe) {
+        showToast('Ya existe un pago para este mes', 'warning');
+        return;
+    }
+    
+    data.pagos.push({
+        id: getNextId('pagos'),
+        contratoId,
+        fechaPago,
+        monto,
+        metodo,
+        comprobante: comprobante || `PAGO-${Date.now()}`,
+        mesCorrespondiente,
+        registradoPor: currentUser.nombre || currentUser.email,
+        observaciones
+    });
+    
+    saveData();
+    closeModal();
+    renderMorosidad();
+    showToast('Pago registrado correctamente', 'success');
+}
+
+// =====================================================================
+// 12. RENDERIZADO - REPORTES
+// =====================================================================
+function renderReportes() {
+    const { total, ocupados, libres, mantenimiento, porcentaje } = getOcupacion();
+    const ingresos = getIngresosMensuales();
+    const totalIngresos = data.pagos.reduce((s,p) => s + p.monto, 0);
+    const contratosVigentes = data.contratos.filter(c => c.estado === 'vigente');
+    const morosos = contratosVigentes.filter(c => calcularEstadoPago(c) === 'atrasado');
+    const deudaTotal = morosos.reduce((s, c) => s + calcularDeuda(c), 0);
+    
+    // Contratos a vencer
+    const hoy = new Date();
+    const contratos30 = data.contratos.filter(c => {
+        const fin = new Date(c.fechaFin);
+        const diff = Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24));
+        return c.estado === 'vigente' && diff > 0 && diff <= 30;
+    });
+    const contratos60 = data.contratos.filter(c => {
+        const fin = new Date(c.fechaFin);
+        const diff = Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24));
+        return c.estado === 'vigente' && diff > 30 && diff <= 60;
+    });
+    
+    let html = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="card-dashboard">
+                <p class="text-sm text-gray-500">Ingresos Totales</p>
+                <p class="text-2xl font-bold text-gray-800">$${totalIngresos.toLocaleString()}</p>
+                <p class="text-xs text-gray-400">Histórico acumulado</p>
+            </div>
+            <div class="card-dashboard">
+                <p class="text-sm text-gray-500">Ocupación</p>
+                <p class="text-2xl font-bold text-gray-800">${porcentaje}%</p>
+                <p class="text-xs text-gray-400">${ocupados} de ${total} locales</p>
+            </div>
+            <div class="card-dashboard border-red-200">
+                <p class="text-sm text-gray-500">Deuda Total</p>
+                <p class="text-2xl font-bold text-red-600">$${deudaTotal.toLocaleString()}</p>
+                <p class="text-xs text-gray-400">${morosos.length} morosos</p>
+            </div>
+            <div class="card-dashboard border-orange-200">
+                <p class="text-sm text-gray-500">Renovaciones Próximas</p>
+                <p class="text-2xl font-bold text-orange-600">${contratos30.length + contratos60.length}</p>
+                <p class="text-xs text-gray-400">30 días: ${contratos30.length} · 60 días: ${contratos60.length}</p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card-dashboard">
+                <h3 class="font-semibold text-gray-700 mb-4"><i class="fas fa-chart-line mr-2 text-blue-500"></i>Ingresos Mensuales</h3>
+                <canvas id="reportIncomeChart" height="120"></canvas>
+            </div>
+            <div class="card-dashboard">
+                <h3 class="font-semibold text-gray-700 mb-4"><i class="fas fa-users mr-2 text-purple-500"></i>Estado de Contratos</h3>
+                <canvas id="reportContractChart" height="120"></canvas>
+            </div>
+        </div>
+        
+        <div class="mt-6 card-dashboard">
+            <h3 class="font-semibold text-gray-700 mb-4"><i class="fas fa-list mr-2 text-gray-400"></i>Contratos a Vencer (30 días)</h3>
+            ${contratos30.length > 0 ? `
+                <div class="space-y-2">
+                    ${contratos30.map(c => {
+                        const local = getLocalById(c.localId);
+                        const inquilino = getInquilinoById(c.inquilinoId);
+                        const fin = new Date(c.fechaFin);
+                        const diff = Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24));
+                        return `
+                            <div class="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                                <div>
+                                    <span class="font-medium text-gray-800">${local ? local.nombre : 'N/A'}</span>
+                                    <span class="text-sm text-gray-500 ml-2">${inquilino ? inquilino.nombre : 'N/A'}</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-sm text-orange-600">${diff} días</span>
+                                    <span class="text-xs text-gray-400">${c.fechaFin}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            ` : '<p class="text-center text-gray-400 text-sm py-4">No hay contratos por vencer en los próximos 30 días</p>'}
+        </div>
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+    
+    setTimeout(() => {
+        const ctxIncome = document.getElementById('reportIncomeChart');
+        if (ctxIncome) {
+            const meses = getIngresosMensuales();
+            new Chart(ctxIncome, {
+                type: 'line',
+                data: {
+                    labels: meses.map(m => m.mes),
+                    datasets: [{ 
+                        label: 'Ingresos ($)', 
+                        data: meses.map(m => m.total),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+        
+        const ctxContract = document.getElementById('reportContractChart');
+        if (ctxContract) {
+            const total = data.contratos.length;
+            const vigentes = data.contratos.filter(c => c.estado === 'vigente').length;
+            const vencidos = data.contratos.filter(c => c.estado === 'vencido' || c.estado === 'rescindido').length;
+            const renovados = data.contratos.filter(c => c.estado === 'renovado').length;
+            
+            new Chart(ctxContract, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Vigentes', 'Vencidos', 'Renovados'],
+                    datasets: [{ 
+                        data: [vigentes, vencidos, renovados],
+                        backgroundColor: ['#22c55e', '#ef4444', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } } },
+                    cutout: '65%'
+                }
+            });
+        }
+    }, 100);
+}
+
+// =====================================================================
+// 13. RENDERIZADO - DOCUMENTOS, USUARIOS, CONFIGURACIÓN
+// =====================================================================
+function renderDocumentos() {
+    let html = `
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <h3 class="font-bold text-lg text-gray-800"><i class="fas fa-folder-open mr-2 text-blue-500"></i>Repositorio Documental</h3>
+            <button onclick="showFormDocumento()" class="btn-blue text-sm"><i class="fas fa-upload mr-2"></i>Subir Documento</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="card-dashboard">
+                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-store mr-2 text-blue-400"></i>Documentos por Local</h4>
+                ${data.locales.filter(l => l.documentos && l.documentos.length > 0).length > 0 ? 
+                    data.locales.filter(l => l.documentos && l.documentos.length > 0).map(l => `
+                        <div class="py-2 border-b border-gray-50 last:border-0">
+                            <div class="font-medium text-gray-800">${l.nombre}</div>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${l.documentos.map(d => `
+                                    <span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">${d.nombre}</span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')
+                : '<p class="text-gray-400 text-sm">No hay documentos subidos para locales</p>'}
+            </div>
+            <div class="card-dashboard">
+                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-users mr-2 text-green-400"></i>Documentos por Inquilino</h4>
+                ${data.inquilinos.filter(i => i.documentos && i.documentos.length > 0).length > 0 ?
+                    data.inquilinos.filter(i => i.documentos && i.documentos.length > 0).map(i => `
+                        <div class="py-2 border-b border-gray-50 last:border-0">
+                            <div class="font-medium text-gray-800">${i.nombre}</div>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${i.documentos.map(d => `
+                                    <span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">${d.nombre}</span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')
+                : '<p class="text-gray-400 text-sm">No hay documentos subidos para inquilinos</p>'}
+            </div>
+        </div>
+        <div class="mt-4 card-dashboard bg-yellow-50 border-yellow-200">
+            <p class="text-sm text-yellow-700"><i class="fas fa-info-circle mr-2"></i>Los documentos se almacenan en el navegador. Para una solución más robusta, se recomienda usar Firebase Storage.</p>
+        </div>
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+function showFormDocumento() {
+    let html = `
+        <h3 class="font-bold text-xl text-gray-800 mb-4">📤 Subir Documento</h3>
+        <form id="fDocumento" onsubmit="saveDocumento(event)">
+            <div class="space-y-4">
+                <div>
+                    <label class="form-label">Nombre del Documento *</label>
+                    <input type="text" id="fDocNombre" class="form-input" placeholder="Ej: Contrato firmado, Plano, etc." required>
+                </div>
+                <div>
+                    <label class="form-label">Entidad Asociada *</label>
+                    <select id="fDocEntidad" class="form-input" required>
+                        <option value="">Seleccionar...</option>
+                        ${data.locales.map(l => `<option value="local-${l.id}">Local: ${l.nombre}</option>`).join('')}
+                        ${data.inquilinos.map(i => `<option value="inquilino-${i.id}">Inquilino: ${i.nombre}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Tipo de Documento</label>
+                    <select id="fDocTipo" class="form-input">
+                        ${['Contrato','Identificación','Comprobante','Plano','Fotografía','Otro'].map(t => `
+                            <option value="${t}">${t}</option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Visibilidad</label>
+                    <select id="fDocVisibilidad" class="form-input">
+                        <option value="admin">Administrador</option>
+                        <option value="inquilino">Administrador e Inquilino</option>
+                        <option value="publico">Todos</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">URL o Referencia</label>
+                    <input type="text" id="fDocUrl" class="form-input" placeholder="https://... o ruta del archivo">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition text-sm">Cancelar</button>
+                <button type="submit" class="btn-blue px-6 py-2 text-sm"><i class="fas fa-upload mr-2"></i>Subir</button>
+            </div>
+        </form>
+    `;
+    openModal(html);
+}
+
+function saveDocumento(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('fDocNombre').value.trim();
+    const entidad = document.getElementById('fDocEntidad').value;
+    const tipo = document.getElementById('fDocTipo').value;
+    const visibilidad = document.getElementById('fDocVisibilidad').value;
+    const url = document.getElementById('fDocUrl').value.trim();
+    
+    if (!nombre || !entidad) {
+        showToast('Nombre y entidad son requeridos', 'error');
+        return;
+    }
+    
+    const [entidadTipo, entidadId] = entidad.split('-');
+    const doc = {
+        nombre,
+        tipo,
+        visibilidad,
+        url: url || '#',
+        fechaSubida: new Date().toISOString()
+    };
+    
+    if (entidadTipo === 'local') {
+        const local = data.locales.find(l => l.id === parseInt(entidadId));
+        if (local) {
+            if (!local.documentos) local.documentos = [];
+            local.documentos.push(doc);
+        }
+    } else if (entidadTipo === 'inquilino') {
+        const inquilino = data.inquilinos.find(i => i.id === parseInt(entidadId));
+        if (inquilino) {
+            if (!inquilino.documentos) inquilino.documentos = [];
+            inquilino.documentos.push(doc);
+        }
+    }
+    
+    saveData();
+    closeModal();
+    renderDocumentos();
+    showToast('Documento registrado correctamente', 'success');
+}
+
+function renderUsuarios() {
+    let html = `
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+            <h3 class="font-bold text-lg text-gray-800"><i class="fas fa-user-cog mr-2 text-gray-600"></i>Usuarios del Sistema</h3>
+            ${currentUser.rol === 'admin' ? `
+                <button onclick="showFormUsuario()" class="btn-blue text-sm"><i class="fas fa-user-plus mr-2"></i>Nuevo Usuario</button>
+            ` : ''}
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        ${currentUser.rol === 'admin' ? '<th>Acciones</th>' : ''}
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.usuarios.forEach(u => {
+        const esAdmin = currentUser.rol === 'admin';
+        html += `
+            <tr>
+                <td class="font-medium text-gray-800">${u.nombre}</td>
+                <td class="text-sm">${u.email}</td>
+                <td><span class="badge-estado ${u.rol === 'admin' ? 'badge-vigente' : u.rol === 'cobrador' ? 'badge-pagado' : 'bg-gray-100 text-gray-600'}">${u.rol}</span></td>
+                <td><span class="text-xs text-green-600"><i class="fas fa-check-circle"></i> Activo</span></td>
+                ${esAdmin ? `
+                    <td>
+                        <button onclick="showFormUsuario(${u.id})" class="text-blue-600 hover:text-blue-800 transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="eliminarUsuario(${u.id})" class="text-red-600 hover:text-red-800 transition ml-2"><i class="fas fa-trash"></i></button>
+                    </td>
+                ` : ''}
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+function showFormUsuario(id = null) {
+    const usuario = id ? data.usuarios.find(u => u.id === id) : null;
+    
+    let html = `
+        <h3 class="font-bold text-xl text-gray-800 mb-4">${usuario ? '✏️ Modificar Usuario' : '👤 Nuevo Usuario'}</h3>
+        <form id="fUsuario" onsubmit="saveUsuario(event, ${id || 'null'})">
+            <div class="space-y-4">
+                <div>
+                    <label class="form-label">Nombre Completo *</label>
+                    <input type="text" id="fNom" value="${usuario ? usuario.nombre : ''}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Correo Electrónico *</label>
+                    <input type="email" id="fEmail" value="${usuario ? usuario.email : ''}" class="form-input" required>
+                </div>
+                <div>
+                    <label class="form-label">Contraseña ${usuario ? '(dejar vacío para mantener)' : '*'}</label>
+                    <input type="password" id="fPass" class="form-input" ${usuario ? '' : 'required'}>
+                </div>
+                <div>
+                    <label class="form-label">Rol *</label>
+                    <select id="fRol" class="form-input" required>
+                        ${['admin','cobrador','inquilino'].map(r => `
+                            <option value="${r}" ${usuario && usuario.rol === r ? 'selected' : ''}>${r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                        `).join('')}
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition text-sm">Cancelar</button>
+                <button type="submit" class="btn-blue px-6 py-2 text-sm"><i class="fas fa-save mr-2"></i>Guardar</button>
+            </div>
+        </form>
+    `;
+    openModal(html);
+}
+
+function saveUsuario(e, id) {
+    e.preventDefault();
+    const nombre = document.getElementById('fNom').value.trim();
+    const email = document.getElementById('fEmail').value.trim();
+    const password = document.getElementById('fPass').value;
+    const rol = document.getElementById('fRol').value;
+    
+    if (!nombre || !email) {
+        showToast('Nombre y correo son requeridos', 'error');
+        return;
+    }
+    
+    if (id) {
+        const u = data.usuarios.find(usr => usr.id === id);
+        if (u) {
+            u.nombre = nombre;
+            u.email = email;
+            u.rol = rol;
+            if (password) u.password = password;
+        }
+    } else {
+        if (!password) {
+            showToast('La contraseña es requerida para nuevos usuarios', 'error');
+            return;
+        }
+        data.usuarios.push({
+            id: `u${Date.now()}`,
+            email, password, rol, nombre,
+            inquilinoId: null
+        });
+    }
+    saveData();
+    closeModal();
+    renderUsuarios();
+    showToast(`Usuario ${id ? 'actualizado' : 'creado'} correctamente`, 'success');
+}
+
+function eliminarUsuario(id) {
+    if (!confirm('¿Seguro que deseas eliminar este usuario?')) return;
+    data.usuarios = data.usuarios.filter(u => u.id !== id);
+    saveData();
+    renderUsuarios();
+    showToast('Usuario eliminado', 'info');
+}
+
+function renderConfiguracion() {
+    const config = data.configuracion || { interesesMoratorios: 0.5, diasRecordatorio: 3 };
+    
+    let html = `
+        <h3 class="font-bold text-lg text-gray-800 mb-4"><i class="fas fa-cog mr-2 text-gray-600"></i>Configuración General</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="card-dashboard">
+                <h4 class="font-semibold text-gray-700 mb-3"><i class="fas fa-sliders-h mr-2 text-blue-500"></i>Parámetros del Sistema</h4>
+                <form id="fConfig" onsubmit="saveConfig(event)">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="form-label">Días de Anticipación para Recordatorios</label>
+                            <input type="number" id="fDiasRecordatorio" value="${config.diasRecordatorio || 3}" class="form-input" min="1" max="15">
+                        </div>
+                        <div>
+                            <label class="form-label">Interés Moratorio (% mensual)</label>
+                            <input type="number" id="fInteres" value="${config.interesesMoratorios || 0.5}" class="form-input" min="0" max="10" step="0.1">
+                        </div>
+                        <div>
+                            <label class="form-label">Nombre de la Empresa</label>
+                            <input type="text" id="fEmpresa" value="${config.empresa || 'RentasPro'}" class="form-input">
+                        </div>
+                        <button type="submit" class="btn-blue text-sm"><i class="fas fa-save mr-2"></i>Guardar Configuración</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-dashboard">
+                <h4 class="font-semibold text-gray-700 mb-3"><i class="fas fa-database mr-2 text-green-500"></i>Respaldos</h4>
+                <button onclick="exportarDatos()" class="btn-primary text-sm w-full"><i class="fas fa-download mr-2"></i>Exportar Datos (JSON)</button>
+                <button onclick="importarDatos()" class="btn-primary text-sm w-full mt-2"><i class="fas fa-upload mr-2"></i>Importar Datos (JSON)</button>
+                <input type="file" id="fileInputImport" accept=".json" style="display:none" onchange="handleImport(event)">
+            </div>
+        </div>
+        
+        <div class="card-dashboard bg-red-50 border-red-200">
+            <h4 class="font-bold text-red-800 mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Zona de Peligro</h4>
+            <p class="text-sm text-red-600 mb-4">Esta acción eliminará todos los datos y restaurará los valores de ejemplo originales.</p>
+            <button onclick="reiniciarDatos()" class="btn-red text-sm"><i class="fas fa-trash-alt mr-2"></i>Restablecer Sistema</button>
+        </div>
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+function saveConfig(e) {
+    e.preventDefault();
+    data.configuracion = {
+        diasRecordatorio: parseInt(document.getElementById('fDiasRecordatorio').value) || 3,
+        interesesMoratorios: parseFloat(document.getElementById('fInteres').value) || 0,
+        empresa: document.getElementById('fEmpresa').value.trim() || 'RentasPro'
+    };
+    saveData();
+    showToast('Configuración guardada', 'success');
+}
+
+// =====================================================================
+// 14. VISTA INQUILINO
+// =====================================================================
+function renderVistaInquilino() {
+    const inquilino = data.inquilinos.find(i => i.id === currentUser.inquilinoId);
+    if (!inquilino) {
+        document.getElementById('contentContainer').innerHTML = `
+            <div class="card-dashboard text-center py-12">
+                <i class="fas fa-user-slash text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">No se encontró información de tu perfil de inquilino.</p>
+                <p class="text-sm text-gray-400">Contacta al administrador.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const contratos = getContratosByInquilino(inquilino.id);
+    const contratoVigente = contratos.find(c => c.estado === 'vigente');
+    const local = contratoVigente ? getLocalById(contratoVigente.localId) : null;
+    const pagos = contratoVigente ? getPagosByContrato(contratoVigente.id) : [];
+    const estadoPago = contratoVigente ? calcularEstadoPago(contratoVigente) : 'sin_contrato';
+    const deuda = contratoVigente ? calcularDeuda(contratoVigente) : 0;
+    const diasAtraso = contratoVigente ? calcularDiasAtraso(contratoVigente) : 0;
+    
+    let html = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="card-dashboard">
+                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-user mr-2 text-blue-500"></i>Mi Información</h4>
+                <p class="font-medium text-gray-800 text-lg">${inquilino.nombre}</p>
+                <p class="text-sm text-gray-500">${inquilino.email}</p>
+                <p class="text-sm text-gray-500">${inquilino.telefono || 'Sin teléfono'}</p>
+                <p class="text-sm text-gray-500">RFC: ${inquilino.rfc || 'No registrado'}</p>
+            </div>
+            <div class="card-dashboard ${!contratoVigente ? 'border-gray-200' : estadoPago === 'atrasado' ? 'border-red-400' : 'border-green-400'}">
+                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-home mr-2 text-green-500"></i>Mi Local</h4>
+                ${contratoVigente && local ? `
+                    <p class="font-medium text-gray-800 text-lg">${local.nombre}</p>
+                    <p class="text-sm text-gray-500">${local.direccion}</p>
+                    <p class="text-sm text-gray-500">${local.tipo} · ${local.metros}m²</p>
+                    <div class="mt-3 pt-3 border-t flex justify-between">
+                        <span class="font-bold text-blue-600">$${contratoVigente.montoRenta.toLocaleString()}/mes</span>
+                        <span class="badge-estado ${estadoPago === 'pagado' ? 'badge-pagado' : estadoPago === 'atrasado' ? 'badge-atrasado' : 'bg-gray-100 text-gray-600'}">
+                            ${estadoPago === 'pagado' ? '✅ Al día' : estadoPago === 'atrasado' ? `⚠️ ${diasAtraso} días atraso` : '📅 Pendiente'}
+                        </span>
+                    </div>
+                    ${deuda > 0 ? `<p class="text-sm text-red-600 mt-1">Deuda: $${deuda.toLocaleString()}</p>` : ''}
+                ` : `
+                    <p class="text-gray-400 text-sm">No tienes un contrato vigente.</p>
+                `}
+            </div>
+        </div>
+        
+        <div class="card-dashboard">
+            <h4 class="font-semibold text-gray-700 mb-4"><i class="fas fa-history mr-2 text-gray-400"></i>Historial de Pagos</h4>
+            ${pagos.length > 0 ? `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mes</th>
+                                <th>Monto</th>
+                                <th>Fecha</th>
+                                <th>Método</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pagos.map(p => `
+                                <tr>
+                                    <td class="font-mono">${p.mesCorrespondiente}</td>
+                                    <td class="font-bold text-green-600">$${p.monto.toLocaleString()}</td>
+                                    <td>${formatDate(p.fechaPago)}</td>
+                                    <td><span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">${p.metodo}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            ` : `
+                <p class="text-center text-gray-400 py-4">No hay pagos registrados para tu contrato.</p>
+            `}
+        </div>
+        
+        ${contratoVigente ? `
+            <div class="mt-6 card-dashboard">
+                <h4 class="font-semibold text-gray-700 mb-4"><i class="fas fa-file-signature mr-2 text-blue-500"></i>Detalle del Contrato</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div><span class="text-gray-500">Inicio:</span> ${contratoVigente.fechaInicio}</div>
+                    <div><span class="text-gray-500">Fin:</span> ${contratoVigente.fechaFin}</div>
+                    <div><span class="text-gray-500">Día de Pago:</span> ${contratoVigente.diaPago}</div>
+                    <div><span class="text-gray-500">Depósito:</span> $${(contratoVigente.deposito || 0).toLocaleString()}</div>
+                </div>
+                ${contratoVigente.clausulas ? `
+                    <div class="mt-3 pt-3 border-t">
+                        <span class="text-gray-500">Cláusulas:</span>
+                        <p class="text-sm text-gray-600 mt-1">${contratoVigente.clausulas}</p>
+                    </div>
+                ` : ''}
+            </div>
+        ` : ''}
+    `;
+    document.getElementById('contentContainer').innerHTML = html;
+}
+
+// =====================================================================
+// 15. UTILERÍAS
+// =====================================================================
+function exportarDatos() {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `respaldo-rentas-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Datos exportados correctamente', 'success');
+}
+
+function importarDatos() {
+    document.getElementById('fileInputImport').click();
+}
+
+function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            // Validar estructura básica
+            if (!imported.locales || !imported.inquilinos || !imported.contratos) {
+                showToast('El archivo no tiene la estructura correcta', 'error');
+                return;
+            }
+            if (confirm('¿Deseas reemplazar todos los datos actuales con los del archivo importado?')) {
+                data = imported;
+                saveData();
+                showToast('Datos importados correctamente', 'success');
+                navigateTo(currentView);
+            }
+        } catch(err) {
+            showToast('Error al leer el archivo: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+function reiniciarDatos() {
+    if (!confirm('⚠️ ¿Seguro que quieres restablecer el sistema a los valores de fábrica? Se perderán todos los datos.')) return;
+    if (!confirm('Esta acción no se puede deshacer. ¿Continuar?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    loadData();
+    showToast('Sistema restablecido correctamente', 'success');
+    navigateTo('dashboard');
+}
+
+function openModal(htmlContent) {
+    document.getElementById('modalContent').innerHTML = htmlContent;
+    document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.add('hidden');
+}
+
+// Cerrar modal con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+});
+
+// Cerrar notificaciones al hacer clic fuera
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('notifDropdown');
+    const bell = document.querySelector('.fa-bell')?.parentElement;
+    if (dropdown && !dropdown.classList.contains('hidden') && !dropdown.contains(e.target) && !bell?.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
+
+// =====================================================================
+// 16. INICIALIZACIÓN
+// =====================================================================
+window.onload = function() {
+    loadData();
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('appScreen').classList.add('hidden');
+};
+
+// Exponer funciones globales
+window.navigateTo = navigateTo;
+window.login = login;
+window.logout = logout;
+window.toggleSidebar = toggleSidebar;
+window.closeModal = closeModal;
+window.openModal = openModal;
+window.refreshData = refreshData;
+window.showToast = showToast;
+window.exportarDatos = exportarDatos;
+window.importarDatos = importarDatos;
+window.handleImport = handleImport;
+window.reiniciarDatos = reiniciarDatos;
+window.toggleNotifications = toggleNotifications;
+window.markAllRead = markAllRead;
+window.markAsRead = markAsRead;
+
+// Funciones de locales
+window.showFormLocal = showFormLocal;
+window.saveLocal = saveLocal;
+window.eliminarLocal = eliminarLocal;
+
+// Funciones de inquilinos
+window.showFormInquilino = showFormInquilino;
+window.saveInquilino = saveInquilino;
+window.eliminarInquilino = eliminarInquilino;
+
+// Funciones de contratos
+window.showFormContrato = showFormContrato;
+window.saveContrato = saveContrato;
+window.eliminarContrato = eliminarContrato;
+
+// Funciones de pagos
+window.showFormPago = showFormPago;
+window.savePago = savePago;
+window.showFormPagoConContrato = showFormPagoConContrato;
+window.savePagoConContrato = savePagoConContrato;
+
+// Funciones de documentos
+window.showFormDocumento = showFormDocumento;
+window.saveDocumento = saveDocumento;
+
+// Funciones de usuarios
+window.showFormUsuario = showFormUsuario;
+window.saveUsuario = saveUsuario;
+window.eliminarUsuario = eliminarUsuario;
+
+// Configuración
+window.saveConfig = saveConfig;
+
+console.log('🏢 RentasPro v2.0 - Sistema de Gestión de Rentas');
+console.log(`📊 ${data.locales.length} locales, ${data.inquilinos.length} inquilinos, ${data.contratos.length} contratos, ${data.pagos.length} pagos`);
+console.log('💾 Datos guardados en localStorage');
+</script>
+
+</body>
+</html>
