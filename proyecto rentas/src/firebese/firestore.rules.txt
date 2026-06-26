@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Función auxiliar para verificar roles
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.rol == 'admin';
+    }
+    
+    function isCobrador() {
+      return isAuthenticated() && request.auth.token.rol == 'cobrador';
+    }
+    
+    function isInquilino() {
+      return isAuthenticated() && request.auth.token.rol == 'inquilino';
+    }
+    
+    // Reglas para la colección de usuarios
+    match /usuarios/{userId} {
+      allow read: if isAuthenticated() && (isAdmin() || request.auth.uid == userId);
+      allow write: if isAdmin();
+    }
+    
+    // Reglas para la colección de locales
+    match /locales/{localId} {
+      allow read: if isAuthenticated() && (isAdmin() || isCobrador() || isInquilino());
+      allow write: if isAdmin() || isCobrador();
+      allow delete: if isAdmin();
+    }
+    
+    // Reglas para la colección de inquilinos
+    match /inquilinos/{inquilinoId} {
+      allow read: if isAuthenticated() && (isAdmin() || isCobrador() || 
+        (isInquilino() && request.auth.uid == resource.data.userId));
+      allow write: if isAdmin() || isCobrador();
+      allow delete: if isAdmin();
+    }
+    
+    // Reglas para la colección de contratos
+    match /contratos/{contratoId} {
+      allow read: if isAuthenticated() && (isAdmin() || isCobrador() || isInquilino());
+      allow write: if isAdmin() || isCobrador();
+      allow delete: if isAdmin();
+    }
+    
+    // Reglas para la colección de pagos
+    match /pagos/{pagoId} {
+      allow read: if isAuthenticated() && (isAdmin() || isCobrador() || isInquilino());
+      allow write: if isAdmin() || isCobrador();
+      allow delete: if isAdmin();
+    }
+    
+    // Reglas para la colección de notificaciones
+    match /notificaciones/{notificacionId} {
+      allow read: if isAuthenticated() && 
+        (isAdmin() || isCobrador() || request.auth.uid == resource.data.userId);
+      allow write: if isAdmin() || isCobrador();
+      allow update: if isAuthenticated() && 
+        (isAdmin() || isCobrador() || request.auth.uid == resource.data.userId);
+    }
+    
+    // Reglas para la colección de documentos
+    match /documentos/{documentoId} {
+      allow read: if isAuthenticated() && (isAdmin() || isCobrador() || 
+        (isInquilino() && request.auth.uid == resource.data.userId));
+      allow write: if isAdmin() || isCobrador();
+      allow delete: if isAdmin();
+    }
+  }
+}

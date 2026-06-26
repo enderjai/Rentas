@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "chart.js": "^4.3.0",
+    "react-chartjs-2": "^5.2.0",
+    "@headlessui/react": "^1.7.15",
+    "date-fns": "^2.30.0"
+  }
+}

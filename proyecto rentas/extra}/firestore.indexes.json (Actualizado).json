@@ -1,0 +1,30 @@
+{
+  "indexes": [
+    // ... índices anteriores ...
+    {
+      "collectionGroup": "inquilinos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "activo", "order": "ASCENDING" },
+        { "fieldPath": "nombre", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "inquilinos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tipo", "order": "ASCENDING" },
+        { "fieldPath": "nombre", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "contratos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "inquilinoId", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "fechaInicio", "order": "DESCENDING" }
+      ]
+    }
+  ]
+}
